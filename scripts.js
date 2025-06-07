@@ -1,34 +1,42 @@
 document.addEventListener('DOMContentLoaded', () => {
-
-    const localQuotes = [
-        { content: "The best way to predict the future is to create it.", author: "Peter Drucker" },
-        { content: "Innovation distinguishes between a leader and a follower.", author: "Steve Jobs" },
-        { content: "Technology is best when it brings people together.", author: "Matt Mullenweg" },
-        { content: "Any sufficiently advanced technology is indistinguishable from magic.", author: "Arthur C. Clarke" },
-        { content: "The advance of technology is based on making it fit in so that you don't really even notice it.", author: "Bill Gates" }
-    ];
+    const API_KEY = 'QjpMDrfHzw3oNrkGSryQhA==PRRp1DbjnuBBHUdA';
+    let currentQuote = '';
 
     async function fetchQuote() {
         try {
-            const response = await fetch('https://api.quotable.io/random', {
+            const response = await fetch('https://api.api-ninjas.com/v1/quotes?category=', {
                 method: 'GET',
                 headers: {
-                    'Accept': 'application/json',
-                    'Content-Security-Policy': "upgrade-insecure-requests"
+                    'X-Api-Key': API_KEY,
+                    'Content-Type': 'application/json'
                 },
-                cache: 'no-store',
-                mode: 'cors'
+                cache: 'no-store'
             });
             
-            if (!response.ok) throw new Error('API response not ok');
+            if (response.status === 429) {
+                throw new Error('Quote limit expired');
+            }
             
-            const data = await response.json();
-            updateQuote(data.content, data.author);
-        } catch (error) {
-            console.warn('Falling back to local quotes:', error);
+            if (!response.ok) {
+                throw new Error('API response not ok');
+            }
+            
+            const [data] = await response.json();
+            
 
-            const randomQuote = localQuotes[Math.floor(Math.random() * localQuotes.length)];
-            updateQuote(randomQuote.content, randomQuote.author);
+            if (data.quote === currentQuote) {
+                return fetchQuote();
+            }
+            
+            currentQuote = data.quote;
+            updateQuote(data.quote, data.author);
+        } catch (error) {
+            console.error('Error fetching quote:', error);
+            if (error.message === 'Quote limit expired') {
+                updateQuote('Quote limit expired, try again tomorrow', 'System');
+            } else {
+                updateQuote('Error fetching quote', 'Please try again later');
+            }
         }
     }
 
@@ -38,12 +46,29 @@ document.addEventListener('DOMContentLoaded', () => {
         
         if (quoteText && quoteAuthor) {
             quoteText.textContent = `"${content}"`;
-            quoteAuthor.textContent = `- ${author || 'Unknown'}`;
+            quoteAuthor.textContent = `- ${author}`;
         }
+    }
+
+    function scheduleNextUpdate() {
+        const now = new Date();
+        const tomorrow = new Date(now);
+        tomorrow.setDate(tomorrow.getDate() + 1);
+        tomorrow.setHours(0, 0, 0, 0);
+        
+        const timeUntilMidnight = tomorrow - now;
+        setTimeout(() => {
+            fetchQuote();
+            scheduleNextUpdate();
+        }, timeUntilMidnight);
     }
 
 
     fetchQuote();
+    
+
+    scheduleNextUpdate();
+
 
     document.querySelector('.quote-container').addEventListener('click', fetchQuote);
 });
