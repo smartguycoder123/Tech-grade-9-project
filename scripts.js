@@ -1,61 +1,49 @@
 document.addEventListener('DOMContentLoaded', () => {
+
+    const localQuotes = [
+        { content: "The best way to predict the future is to create it.", author: "Peter Drucker" },
+        { content: "Innovation distinguishes between a leader and a follower.", author: "Steve Jobs" },
+        { content: "Technology is best when it brings people together.", author: "Matt Mullenweg" },
+        { content: "Any sufficiently advanced technology is indistinguishable from magic.", author: "Arthur C. Clarke" },
+        { content: "The advance of technology is based on making it fit in so that you don't really even notice it.", author: "Bill Gates" }
+    ];
+
     async function fetchQuote() {
         try {
-
             const response = await fetch('https://api.quotable.io/random', {
                 method: 'GET',
                 headers: {
                     'Accept': 'application/json',
+                    'Content-Security-Policy': "upgrade-insecure-requests"
                 },
-                cache: 'no-store' 
+                cache: 'no-store',
+                mode: 'cors'
             });
             
+            if (!response.ok) throw new Error('API response not ok');
+            
             const data = await response.json();
-            
-            const quoteText = document.getElementById('quote-text');
-            const quoteAuthor = document.getElementById('quote-author');
-            
-            if (quoteText && quoteAuthor) {
-                quoteText.textContent = `"${data.content}"`;
-                quoteAuthor.textContent = `- ${data.author || 'Unknown'}`;
-            } else {
-                console.error('Quote elements not found in the DOM');
-            }
+            updateQuote(data.content, data.author);
         } catch (error) {
-            console.error('Error fetching quote:', error);
-            try {
+            console.warn('Falling back to local quotes:', error);
 
-                const response = await fetch('http://api.quotable.io/random', {
-                    method: 'GET',
-                    headers: {
-                        'Accept': 'application/json',
-                    },
-                    cache: 'no-store'
-                });
-                const data = await response.json();
-                
-                const quoteText = document.getElementById('quote-text');
-                const quoteAuthor = document.getElementById('quote-author');
-                
-                if (quoteText && quoteAuthor) {
-                    quoteText.textContent = `"${data.content}"`;
-                    quoteAuthor.textContent = `- ${data.author || 'Unknown'}`;
-                }
-            } catch (fallbackError) {
+            const randomQuote = localQuotes[Math.floor(Math.random() * localQuotes.length)];
+            updateQuote(randomQuote.content, randomQuote.author);
+        }
+    }
 
-                const quoteText = document.getElementById('quote-text');
-                const quoteAuthor = document.getElementById('quote-author');
-                if (quoteText && quoteAuthor) {
-                    quoteText.textContent = '"The best way to predict the future is to create it."';
-                    quoteAuthor.textContent = '- Peter Drucker';
-                }
-            }
+    function updateQuote(content, author) {
+        const quoteText = document.getElementById('quote-text');
+        const quoteAuthor = document.getElementById('quote-author');
+        
+        if (quoteText && quoteAuthor) {
+            quoteText.textContent = `"${content}"`;
+            quoteAuthor.textContent = `- ${author || 'Unknown'}`;
         }
     }
 
 
     fetchQuote();
-
 
     document.querySelector('.quote-container').addEventListener('click', fetchQuote);
 });
