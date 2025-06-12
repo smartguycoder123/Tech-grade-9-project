@@ -33,7 +33,7 @@ document.addEventListener('DOMContentLoaded', () => {
         } catch (error) {
             console.error('Error fetching quote:', error);
             if (error.message === 'Quote limit expired') {
-                updateQuote('Quote limit expired, try again tomorrow', 'System');
+                updateQuote('Quote limit expired, try again later', 'System');
             } else {
                 updateQuote('Error fetching quote', 'Please try again later');
             }
@@ -51,16 +51,10 @@ document.addEventListener('DOMContentLoaded', () => {
     }
 
     function scheduleNextUpdate() {
-        const now = new Date();
-        const tomorrow = new Date(now);
-        tomorrow.setDate(tomorrow.getDate() + 1);
-        tomorrow.setHours(0, 0, 0, 0);
-        
-        const timeUntilMidnight = tomorrow - now;
         setTimeout(() => {
             fetchQuote();
             scheduleNextUpdate();
-        }, timeUntilMidnight);
+        }, 50000);
     }
 
 
