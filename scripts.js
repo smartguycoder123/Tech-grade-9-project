@@ -1,6 +1,9 @@
 document.addEventListener('DOMContentLoaded', () => {
     const API_KEY = 'QjpMDrfHzw3oNrkGSryQhA==PRRp1DbjnuBBHUdA';
     let currentQuote = '';
+    let updateInterval = null;
+    const backgroundToggle = document.getElementById('backgroundToggle');
+    const switchLabel = document.querySelector('.switch-label');
 
     async function fetchQuote() {
         try {
@@ -50,19 +53,41 @@ document.addEventListener('DOMContentLoaded', () => {
         }
     }
 
-    function scheduleNextUpdate() {
-        setTimeout(() => {
-            fetchQuote();
-            scheduleNextUpdate();
-        }, 50000);
+    function startUpdates() {
+        fetchQuote();
+        updateInterval = setInterval(fetchQuote, 50000);
+        switchLabel.textContent = 'Background Updates';
+    }
+
+    function stopUpdates() {
+        if (updateInterval) {
+            clearInterval(updateInterval);
+            updateInterval = null;
+        }
+        switchLabel.textContent = 'Background Updates: Off';
     }
 
 
-    fetchQuote();
     
+    document.addEventListener('visibilitychange', () => {
+        if (!backgroundToggle.checked && document.hidden) {
+            stopUpdates();
+        } else if (!backgroundToggle.checked && !document.hidden) {
+            startUpdates();
+        }
+    });
 
-    scheduleNextUpdate();
+
+    backgroundToggle.addEventListener('change', (e) => {
+        if (e.target.checked) {
+            startUpdates();
+        } else {
+            if (document.hidden) {
+                stopUpdates();
+            }
+        }
+    });
 
 
-    document.querySelector('.quote-container').addEventListener('click', fetchQuote);
+    startUpdates();
 });
